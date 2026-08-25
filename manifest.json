@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "lcavadas.system-monitor",
+  "name": "System Monitor",
+  "version": "1.0.0",
+  "author": "lcavadas",
+  "description": "Live CPU, memory, network, and disk usage with history graphs",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "System Monitor",
+    "description": "Live CPU, memory, network, and disk usage with history graphs",
+    "category": "System",
+    "allowMultiple": false
+  }
+}
