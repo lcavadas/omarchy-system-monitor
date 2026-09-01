@@ -21,6 +21,7 @@ Panel {
   property string diskLabel: ""
   property string loadAvg: ""
   property int gpuPercent: 0
+  property int gpuMemPercent: 0
   property string gpuName: ""
   property string gpuMemLabel: ""
   property bool gpuAvailable: false
@@ -36,6 +37,7 @@ Panel {
   property var netDownHistory: []
   property var netUpHistory: []
   property var gpuHistory: []
+  property var gpuMemHistory: []
 
   // Defensive color/typography resolvers so content renders correctly even
   // before the bar binding lands (mirrors how the power panel reads these).
@@ -77,6 +79,7 @@ Panel {
     loadAvg = next.load || ""
     gpuAvailable = next.gpuAvailable === "1"
     gpuPercent = Model.parsePercent(next.gpuPercent)
+    gpuMemPercent = Model.parsePercent(next.gpuMemPercent)
     gpuName = next.gpuName || ""
     gpuMemLabel = next.gpuMemLabel || ""
     cpuHistory = pushSample(cpuHistory, cpuPercent)
@@ -85,6 +88,7 @@ Panel {
     netDownHistory = pushSample(netDownHistory, netDown)
     netUpHistory = pushSample(netUpHistory, netUp)
     gpuHistory = pushSample(gpuHistory, gpuPercent)
+    gpuMemHistory = pushSample(gpuMemHistory, gpuMemPercent)
     hasData = true
   }
 
@@ -102,6 +106,11 @@ Panel {
   readonly property color gpuBarColor: {
     if (gpuPercent >= 85) return Color.urgent
     if (gpuPercent >= 60) return Color.accent
+    return Color.foreground
+  }
+  readonly property color vramBarColor: {
+    if (gpuMemPercent >= 85) return Color.urgent
+    if (gpuMemPercent >= 60) return Color.accent
     return Color.foreground
   }
 
@@ -122,6 +131,11 @@ Panel {
   readonly property color barGpuColor: {
     if (gpuPercent >= 85) return Color.urgent
     if (gpuPercent >= 60) return Color.accent
+    return root.barFg
+  }
+  readonly property color barVramColor: {
+    if (gpuMemPercent >= 85) return Color.urgent
+    if (gpuMemPercent >= 60) return Color.accent
     return root.barFg
   }
 
@@ -193,6 +207,15 @@ Panel {
         samples: root.gpuHistory
         accent: root.barGpuColor
         maxPoints: 24
+        visible: root.gpuAvailable
+      }
+      BarMetric {
+        label: "VRAM"
+        value: root.gpuAvailable ? Math.round(root.gpuMemPercent) + "%" : ""
+        samples: root.gpuMemHistory
+        accent: root.barVramColor
+        maxPoints: 24
+        showGraph: false
         visible: root.gpuAvailable
       }
     }
@@ -301,7 +324,17 @@ Panel {
             accent: root.gpuBarColor
             showGraph: true
             detail: root.gpuName || "GPU"
-            subDetail: root.gpuMemLabel
+            subDetail: ""
+          }
+          PanelSeparator { foreground: root.fg }
+          MetricCard {
+            title: "VRAM"
+            percent: root.gpuMemPercent
+            samples: root.gpuMemHistory
+            accent: root.vramBarColor
+            showGraph: true
+            detail: root.gpuMemLabel
+            subDetail: ""
           }
         }
       }
