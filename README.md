@@ -16,7 +16,7 @@ history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 **In the dropdown panel** (click the widget)
 - `CPU` - history graph, load average, load-level label
 - `Memory` - history graph, used / total
-- `Network` - combined download/upload **mirror bar chart** (download bars rise,
+- `NET` - combined download/upload **mirror bar chart** (download bars rise,
   upload bars mirror downward)
 - `Disk` - used / total
 - `GPU` - history graph, utilisation %, and load-level label (like `CPU`); the

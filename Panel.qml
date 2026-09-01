@@ -363,7 +363,7 @@ Panel {
         PanelSeparator { foreground: root.fg }
 
         MetricCard {
-          title: "Network"
+          title: "NET"
           percent: root.netRate
           samples: root.netDownHistory
           samples2: root.netUpHistory
