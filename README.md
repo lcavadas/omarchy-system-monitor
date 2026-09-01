@@ -62,9 +62,9 @@ GPU monitoring is best-effort and auto-hidden when unsupported:
 
 ## Bar visibility toggles
 
-The dropdown panel has a **BAR** section with toggles for each bar metric
-(`CPU`, `RAM`, `GPU`, `VRAM`, `NET`). Choices are saved to `shell.json` and
-survive restarts.
+Each metric card in the dropdown has a **Show on bar** toggle (`CPU`,
+`Memory` → `RAM`, `GPU`, `VRAM`, `Network` → `NET`). Choices are saved to
+`shell.json` and survive restarts.
 
 The same toggles are just inline widget settings, so they can also be set from
 the CLI:

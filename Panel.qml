@@ -307,6 +307,14 @@ Panel {
           detail: root.hasData ? Model.cpuLabel(root.cpuPercent).toUpperCase() : "—"
           subDetail: root.hasData ? "LOAD " + root.loadAvg : ""
         }
+        Toggle {
+          width: parent.width
+          label: "Show on bar"
+          checked: root.showCpu
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showCpu", !root.showCpu)
+        }
 
         PanelSeparator { foreground: root.fg }
 
@@ -318,6 +326,14 @@ Panel {
           showGraph: true
           detail: root.hasData ? root.memoryLabel : "—"
           subDetail: ""
+        }
+        Toggle {
+          width: parent.width
+          label: "Show on bar"
+          checked: root.showRam
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showRam", !root.showRam)
         }
 
         // GPU card + its separator are wrapped so both hide together on
@@ -336,6 +352,14 @@ Panel {
             detail: Model.gpuLabel(root.gpuPercent).toUpperCase()
             subDetail: root.gpuName
           }
+          Toggle {
+            width: parent.width
+            label: "Show on bar"
+            checked: root.showGpu
+            foreground: root.fg
+            fontFamily: root.fontFam
+            onClicked: root.setBarMetric("showGpu", !root.showGpu)
+          }
           PanelSeparator { foreground: root.fg }
           MetricCard {
             title: "VRAM"
@@ -345,6 +369,14 @@ Panel {
             showGraph: true
             detail: root.gpuMemLabel
             subDetail: ""
+          }
+          Toggle {
+            width: parent.width
+            label: "Show on bar"
+            checked: root.showVram
+            foreground: root.fg
+            fontFamily: root.fontFam
+            onClicked: root.setBarMetric("showVram", !root.showVram)
           }
         }
 
@@ -368,6 +400,14 @@ Panel {
           detail: ""
           subDetail: ""
         }
+        Toggle {
+          width: parent.width
+          label: "Show on bar"
+          checked: root.showNet
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showNet", !root.showNet)
+        }
 
         PanelSeparator { foreground: root.fg }
 
@@ -379,55 +419,6 @@ Panel {
           showGraph: false
           detail: root.hasData ? root.diskLabel : "—"
           subDetail: ""
-        }
-
-        PanelSeparator { foreground: root.fg }
-
-        PanelSectionHeader {
-          text: "BAR"
-          foreground: root.fg
-          fontFamily: root.fontFam
-        }
-
-        Toggle {
-          width: parent.width
-          label: "CPU"
-          checked: root.showCpu
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showCpu", !root.showCpu)
-        }
-        Toggle {
-          width: parent.width
-          label: "RAM"
-          checked: root.showRam
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showRam", !root.showRam)
-        }
-        Toggle {
-          width: parent.width
-          label: "GPU"
-          checked: root.showGpu
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showGpu", !root.showGpu)
-        }
-        Toggle {
-          width: parent.width
-          label: "VRAM"
-          checked: root.showVram
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showVram", !root.showVram)
-        }
-        Toggle {
-          width: parent.width
-          label: "NET"
-          checked: root.showNet
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showNet", !root.showNet)
         }
       }
     }
