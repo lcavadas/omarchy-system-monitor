@@ -59,6 +59,24 @@ GPU monitoring is best-effort and auto-hidden when unsupported:
 - On hybrid systems the discrete GPU is reported by default. Systems with no
   supported GPU simply don't show a GPU metric in the bar or popup.
 
+## Bar visibility toggles
+
+The dropdown panel has a **BAR** section with toggles for each bar metric
+(`CPU`, `RAM`, `GPU`, `VRAM`, `NET`). Choices are saved to `shell.json` and
+survive restarts.
+
+The same toggles are just inline widget settings, so they can also be set from
+the CLI:
+
+```bash
+omarchy bar set lcavadas.system-monitor showCpu false
+omarchy bar set lcavadas.system-monitor showNet false
+```
+
+Keys: `showCpu`, `showRam`, `showGpu`, `showVram`, `showNet` (all default
+`true`). GPU and VRAM still auto-hide when no supported GPU is detected,
+regardless of their toggle.
+
 ## Tuning
 
 - **Poll interval:** `Panel.qml` - the `Timer` `interval` (default `2000` ms).

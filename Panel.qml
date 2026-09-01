@@ -27,6 +27,14 @@ Panel {
   property bool gpuAvailable: false
   property bool hasData: false
 
+  // Bar metric visibility. Persisted to shell.json via the host shell, so
+  // these survive a restart and are editable with `omarchy bar set`.
+  property bool showCpu: true
+  property bool showRam: true
+  property bool showGpu: true
+  property bool showVram: true
+  property bool showNet: true
+
   // Rolling history for the sparklines. Every sample is appended to a fresh
   // array (never mutated in place) so QML change signals fire and every
   // Canvas repaints on the next sample.
@@ -64,6 +72,39 @@ Panel {
     if (next.length > historyLength) next = next.slice(next.length - historyLength)
     return next
   }
+
+  function loadBarVisibility() {
+    showCpu = setting("showCpu", true)
+    showRam = setting("showRam", true)
+    showGpu = setting("showGpu", true)
+    showVram = setting("showVram", true)
+    showNet = setting("showNet", true)
+  }
+
+  function setBarMetric(key, value) {
+    if (key === "showCpu") showCpu = value
+    else if (key === "showRam") showRam = value
+    else if (key === "showGpu") showGpu = value
+    else if (key === "showVram") showVram = value
+    else if (key === "showNet") showNet = value
+    persistBarVisibility()
+  }
+
+  function persistBarVisibility() {
+    if (!root.bar || !root.bar.shell || typeof root.bar.shell.updateEntryInline !== "function") return
+    var next = {}
+    var s = root.settings || {}
+    for (var k in s) if (Object.prototype.hasOwnProperty.call(s, k)) next[k] = s[k]
+    next.showCpu = showCpu
+    next.showRam = showRam
+    next.showGpu = showGpu
+    next.showVram = showVram
+    next.showNet = showNet
+    root.bar.shell.updateEntryInline(root.moduleName, next)
+  }
+
+  Component.onCompleted: loadBarVisibility()
+  onSettingsChanged: loadBarVisibility()
 
   function updateStats(raw) {
     var next = Model.parseKeyValue(raw)
@@ -178,6 +219,7 @@ Panel {
         samples: root.cpuHistory
         accent: root.barCpuColor
         maxPoints: 24
+        visible: root.showCpu
       }
       BarMetric {
         label: "RAM"
@@ -185,6 +227,7 @@ Panel {
         samples: root.memHistory
         accent: root.barMemColor
         maxPoints: 24
+        visible: root.showRam
       }
       BarMetric {
         label: "GPU"
@@ -192,7 +235,7 @@ Panel {
         samples: root.gpuHistory
         accent: root.barGpuColor
         maxPoints: 24
-        visible: root.gpuAvailable
+        visible: root.showGpu && root.gpuAvailable
       }
       BarMetric {
         label: "VRAM"
@@ -201,7 +244,7 @@ Panel {
         accent: root.barVramColor
         maxPoints: 24
         showGraph: false
-        visible: root.gpuAvailable
+        visible: root.showVram && root.gpuAvailable
       }
       BarMetric {
         label: "NET"
@@ -217,6 +260,7 @@ Panel {
         leftColor: root.barFg
         rightColor: root.barFg
         valueWidth: Style.space(50)
+        visible: root.showNet
       }
     }
 
@@ -336,6 +380,55 @@ Panel {
             detail: root.gpuMemLabel
             subDetail: ""
           }
+        }
+
+        PanelSeparator { foreground: root.fg }
+
+        PanelSectionHeader {
+          text: "BAR"
+          foreground: root.fg
+          fontFamily: root.fontFam
+        }
+
+        Toggle {
+          width: parent.width
+          label: "CPU"
+          checked: root.showCpu
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showCpu", !root.showCpu)
+        }
+        Toggle {
+          width: parent.width
+          label: "RAM"
+          checked: root.showRam
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showRam", !root.showRam)
+        }
+        Toggle {
+          width: parent.width
+          label: "GPU"
+          checked: root.showGpu
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showGpu", !root.showGpu)
+        }
+        Toggle {
+          width: parent.width
+          label: "VRAM"
+          checked: root.showVram
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showVram", !root.showVram)
+        }
+        Toggle {
+          width: parent.width
+          label: "NET"
+          checked: root.showNet
+          foreground: root.fg
+          fontFamily: root.fontFam
+          onClicked: root.setBarMetric("showNet", !root.showNet)
         }
       }
     }
