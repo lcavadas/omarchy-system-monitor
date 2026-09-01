@@ -5,13 +5,13 @@ history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 
 ## What it shows
 
-**On the bar** (compact, iStat-style)
+**On the bar** (compact, iStat-style, in order)
 - `CPU` - live mini history graph + current %
-- `MEM` - live mini history graph + current %
-- `NET` - live download/upload throughput (down / up), colour-coded
+- `RAM` - live mini history graph + current %
 - `GPU` - live mini history graph + current % (auto-hidden when no supported
   GPU is detected; defaults to the discrete GPU on hybrid systems)
 - `VRAM` - compact video-memory % readout (same auto-hide behaviour)
+- `NET` - live download/upload throughput (down / up), colour-coded
 
 **In the dropdown panel** (click the widget)
 - `CPU` - history graph, load average, load-level label

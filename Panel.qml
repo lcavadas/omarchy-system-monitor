@@ -180,26 +180,11 @@ Panel {
         maxPoints: 24
       }
       BarMetric {
-        label: "MEM"
+        label: "RAM"
         value: Math.round(root.memPercent) + "%"
         samples: root.memHistory
         accent: root.barMemColor
         maxPoints: 24
-      }
-      BarMetric {
-        label: "NET"
-        samples: root.netDownHistory
-        samples2: root.netUpHistory
-        accent: Color.accent
-        accent2: Color.urgent
-        maxPoints: 24
-        autoScale: true
-        showGraph: false
-        valueLeft: root.hasData ? "\u2193 " + Model.formatRateShort(root.netDown) : "\u2193"
-        valueRight: root.hasData ? "\u2191 " + Model.formatRateShort(root.netUp) : "\u2191"
-        leftColor: root.barFg
-        rightColor: root.barFg
-        valueWidth: Style.space(50)
       }
       BarMetric {
         label: "GPU"
@@ -217,6 +202,21 @@ Panel {
         maxPoints: 24
         showGraph: false
         visible: root.gpuAvailable
+      }
+      BarMetric {
+        label: "NET"
+        samples: root.netDownHistory
+        samples2: root.netUpHistory
+        accent: Color.accent
+        accent2: Color.urgent
+        maxPoints: 24
+        autoScale: true
+        showGraph: false
+        valueLeft: root.hasData ? "\u2193 " + Model.formatRateShort(root.netDown) : "\u2193"
+        valueRight: root.hasData ? "\u2191 " + Model.formatRateShort(root.netUp) : "\u2191"
+        leftColor: root.barFg
+        rightColor: root.barFg
+        valueWidth: Style.space(50)
       }
     }
 
