@@ -9,6 +9,8 @@ history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 - `CPU` - live mini history graph + current %
 - `MEM` - live mini history graph + current %
 - `NET` - live download/upload throughput (down / up), colour-coded
+- `GPU` - live mini history graph + current % (auto-hidden when no supported
+  GPU is detected; defaults to the discrete GPU on hybrid systems)
 
 **In the dropdown panel** (click the widget)
 - `CPU` - history graph, load average, load-level label
@@ -16,6 +18,8 @@ history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 - `Network` - combined download/upload **mirror bar chart** (download bars rise,
   upload bars mirror downward)
 - `Disk` - used / total
+- `GPU` - history graph, utilisation %, and video memory (used / total). Only
+  shown when a supported GPU is detected.
 
 The widget follows the bar foreground, so it darkens correctly on a transparent
 bar, and it uses the theme accent/urgent colours on the network graph.
@@ -44,6 +48,14 @@ hot-reloads `shell.json`, so no restart is needed for layout changes.
   and `df -h /`)
 - Omarchy shell (the bar host)
 
+GPU monitoring is best-effort and auto-hidden when unsupported:
+
+- **NVIDIA** via `nvidia-smi` (ships with the driver; no extra install).
+- **AMD** via the `amdgpu` sysfs interface (`gpu_busy_percent`,
+  `mem_info_vram_*`).
+- On hybrid systems the discrete GPU is reported by default. Systems with no
+  supported GPU simply don't show a GPU metric in the bar or popup.
+
 ## Tuning
 
 - **Poll interval:** `Panel.qml` - the `Timer` `interval` (default `2000` ms).
@@ -52,9 +64,10 @@ hot-reloads `shell.json`, so no restart is needed for layout changes.
 
 ## Notes
 
-- No external binaries: all metrics come from standard Linux proc/filesystem
-  reads plus `bash`, so the plugin is lightweight (a couple of small file reads
-  per poll).
+- Lightweight: CPU, memory, disk and network come from standard Linux
+  proc/filesystem reads plus `bash` (a couple of small file reads per poll).
+  The only external binary is `nvidia-smi`, used **only** when an NVIDIA GPU is
+  detected, and it ships with the driver.
 - The `NET` graph only appears in the popup; the bar keeps a compact
   down/up readout.
 

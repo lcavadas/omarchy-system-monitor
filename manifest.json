@@ -4,7 +4,7 @@
   "name": "System Monitor",
   "version": "1.0.0",
   "author": "lcavadas",
-  "description": "Live CPU, memory, network, and disk usage with history graphs",
+  "description": "Live CPU, memory, network, disk, and GPU usage with history graphs",
   "kinds": [
     "bar-widget"
   ],
@@ -13,7 +13,7 @@
   },
   "barWidget": {
     "displayName": "System Monitor",
-    "description": "Live CPU, memory, network, and disk usage with history graphs",
+    "description": "Live CPU, memory, network, disk, and GPU usage with history graphs",
     "category": "System",
     "allowMultiple": false
   }

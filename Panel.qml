@@ -20,6 +20,10 @@ Panel {
   property string memoryLabel: ""
   property string diskLabel: ""
   property string loadAvg: ""
+  property int gpuPercent: 0
+  property string gpuName: ""
+  property string gpuMemLabel: ""
+  property bool gpuAvailable: false
   property bool hasData: false
 
   // Rolling history for the sparklines. Every sample is appended to a fresh
@@ -31,6 +35,7 @@ Panel {
   property var diskHistory: []
   property var netDownHistory: []
   property var netUpHistory: []
+  property var gpuHistory: []
 
   // Defensive color/typography resolvers so content renders correctly even
   // before the bar binding lands (mirrors how the power panel reads these).
@@ -70,11 +75,16 @@ Panel {
     memoryLabel = next.memory || ""
     diskLabel = next.disk || ""
     loadAvg = next.load || ""
+    gpuAvailable = next.gpuAvailable === "1"
+    gpuPercent = Model.parsePercent(next.gpuPercent)
+    gpuName = next.gpuName || ""
+    gpuMemLabel = next.gpuMemLabel || ""
     cpuHistory = pushSample(cpuHistory, cpuPercent)
     memHistory = pushSample(memHistory, memPercent)
     diskHistory = pushSample(diskHistory, diskPercent)
     netDownHistory = pushSample(netDownHistory, netDown)
     netUpHistory = pushSample(netUpHistory, netUp)
+    gpuHistory = pushSample(gpuHistory, gpuPercent)
     hasData = true
   }
 
@@ -89,6 +99,11 @@ Panel {
     return Color.foreground
   }
   readonly property color diskBarColor: Color.foreground
+  readonly property color gpuBarColor: {
+    if (gpuPercent >= 85) return Color.urgent
+    if (gpuPercent >= 60) return Color.accent
+    return Color.foreground
+  }
 
   // Bar-only graph/readout colours: default to the dynamic bar foreground so
   // the bar widget matches the other icons when the bar is transparent.
@@ -104,6 +119,11 @@ Panel {
   }
   readonly property color barNetColor: root.barFg
   readonly property color barDiskColor: root.barFg
+  readonly property color barGpuColor: {
+    if (gpuPercent >= 85) return Color.urgent
+    if (gpuPercent >= 60) return Color.accent
+    return root.barFg
+  }
 
   Process {
     id: statsProc
@@ -166,6 +186,14 @@ Panel {
         leftColor: root.barFg
         rightColor: root.barFg
         valueWidth: Style.space(50)
+      }
+      BarMetric {
+        label: "GPU"
+        value: root.gpuAvailable ? Math.round(root.gpuPercent) + "%" : ""
+        samples: root.gpuHistory
+        accent: root.barGpuColor
+        maxPoints: 24
+        visible: root.gpuAvailable
       }
     }
 
@@ -257,6 +285,24 @@ Panel {
           showGraph: false
           detail: root.hasData ? root.diskLabel : "—"
           subDetail: ""
+        }
+
+        // GPU card + its separator are wrapped so both hide together on
+        // machines with no supported GPU (no dangling divider in the popup).
+        Column {
+          visible: root.gpuAvailable
+          width: parent.width
+          spacing: Style.space(14)
+          PanelSeparator { foreground: root.fg }
+          MetricCard {
+            title: "GPU"
+            percent: root.gpuPercent
+            samples: root.gpuHistory
+            accent: root.gpuBarColor
+            showGraph: true
+            detail: root.gpuName || "GPU"
+            subDetail: root.gpuMemLabel
+          }
         }
       }
     }
