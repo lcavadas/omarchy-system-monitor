@@ -539,8 +539,7 @@ Panel {
         text: card.title.toUpperCase()
         foreground: root.fg
         fontFamily: root.fontFam
-        anchors.left: card.barToggle ? barSwitch.right : parent.left
-        anchors.leftMargin: card.barToggle ? Style.space(6) : 0
+        anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
       }
 
