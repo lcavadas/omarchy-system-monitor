@@ -521,7 +521,7 @@ Panel {
     // this metric's visibility on the bar.
     Item {
       width: parent.width
-      implicitHeight: Math.max(titleText.implicitHeight, percentText.implicitHeight, card.barToggle ? barSwitch.implicitHeight : 0)
+      implicitHeight: Math.max(titleText.implicitHeight, percentText.implicitHeight, card.barToggle ? barSwitch.implicitHeight : 0, card.valueLeft !== "" ? valueCol.implicitHeight : 0)
 
       ToggleSwitch {
         id: barSwitch
@@ -543,12 +543,15 @@ Panel {
         anchors.verticalCenter: parent.verticalCenter
       }
 
-      Row {
+      Column {
+        id: valueCol
         visible: card.valueLeft !== ""
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        spacing: Style.space(8)
+        spacing: Style.space(2)
         Text {
+          width: parent.width
+          horizontalAlignment: Text.AlignRight
           text: card.valueLeft
           color: card.leftColor
           font.family: root.fontFam
@@ -556,6 +559,8 @@ Panel {
           font.bold: true
         }
         Text {
+          width: parent.width
+          horizontalAlignment: Text.AlignRight
           text: card.valueRight
           color: card.rightColor
           font.family: root.fontFam
