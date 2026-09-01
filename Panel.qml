@@ -306,14 +306,9 @@ Panel {
           showGraph: true
           detail: root.hasData ? Model.cpuLabel(root.cpuPercent).toUpperCase() : "—"
           subDetail: root.hasData ? "LOAD " + root.loadAvg : ""
-        }
-        Toggle {
-          width: parent.width
-          label: "Show on bar"
-          checked: root.showCpu
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showCpu", !root.showCpu)
+          barToggle: true
+          barChecked: root.showCpu
+          onBarToggled: root.setBarMetric("showCpu", !root.showCpu)
         }
 
         PanelSeparator { foreground: root.fg }
@@ -326,14 +321,9 @@ Panel {
           showGraph: true
           detail: root.hasData ? root.memoryLabel : "—"
           subDetail: ""
-        }
-        Toggle {
-          width: parent.width
-          label: "Show on bar"
-          checked: root.showRam
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showRam", !root.showRam)
+          barToggle: true
+          barChecked: root.showRam
+          onBarToggled: root.setBarMetric("showRam", !root.showRam)
         }
 
         // GPU card + its separator are wrapped so both hide together on
@@ -351,14 +341,9 @@ Panel {
             showGraph: true
             detail: Model.gpuLabel(root.gpuPercent).toUpperCase()
             subDetail: root.gpuName
-          }
-          Toggle {
-            width: parent.width
-            label: "Show on bar"
-            checked: root.showGpu
-            foreground: root.fg
-            fontFamily: root.fontFam
-            onClicked: root.setBarMetric("showGpu", !root.showGpu)
+            barToggle: true
+            barChecked: root.showGpu
+            onBarToggled: root.setBarMetric("showGpu", !root.showGpu)
           }
           PanelSeparator { foreground: root.fg }
           MetricCard {
@@ -369,14 +354,9 @@ Panel {
             showGraph: true
             detail: root.gpuMemLabel
             subDetail: ""
-          }
-          Toggle {
-            width: parent.width
-            label: "Show on bar"
-            checked: root.showVram
-            foreground: root.fg
-            fontFamily: root.fontFam
-            onClicked: root.setBarMetric("showVram", !root.showVram)
+            barToggle: true
+            barChecked: root.showVram
+            onBarToggled: root.setBarMetric("showVram", !root.showVram)
           }
         }
 
@@ -399,14 +379,9 @@ Panel {
           rightColor: Color.urgent
           detail: ""
           subDetail: ""
-        }
-        Toggle {
-          width: parent.width
-          label: "Show on bar"
-          checked: root.showNet
-          foreground: root.fg
-          fontFamily: root.fontFam
-          onClicked: root.setBarMetric("showNet", !root.showNet)
+          barToggle: true
+          barChecked: root.showNet
+          onBarToggled: root.setBarMetric("showNet", !root.showNet)
         }
 
         PanelSeparator { foreground: root.fg }
@@ -534,21 +509,38 @@ Panel {
     property bool showGraph: true
     property bool autoScale: false
     property string chartType: "area"
+    property bool barToggle: false
+    property bool barChecked: true
+    signal barToggled()
 
     width: parent.width
     spacing: Style.space(6)
 
     // Header: Omarchy section label left, live value right (iStat-style).
+    // An optional inline switch rides the header, left of the label, to toggle
+    // this metric's visibility on the bar.
     Item {
       width: parent.width
-      implicitHeight: Math.max(titleText.implicitHeight, percentText.implicitHeight)
+      implicitHeight: Math.max(titleText.implicitHeight, percentText.implicitHeight, card.barToggle ? barSwitch.implicitHeight : 0)
+
+      ToggleSwitch {
+        id: barSwitch
+        visible: card.barToggle
+        checked: card.barChecked
+        foreground: root.fg
+        accent: Color.accent
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        onToggled: card.barToggled()
+      }
 
       PanelSectionHeader {
         id: titleText
         text: card.title.toUpperCase()
         foreground: root.fg
         fontFamily: root.fontFam
-        anchors.left: parent.left
+        anchors.left: card.barToggle ? barSwitch.right : parent.left
+        anchors.leftMargin: card.barToggle ? Style.space(6) : 0
         anchors.verticalCenter: parent.verticalCenter
       }
 
