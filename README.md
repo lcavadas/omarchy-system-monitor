@@ -10,7 +10,7 @@ history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 - `RAM` - live mini history graph + current %
 - `GPU` - live mini history graph + current % (auto-hidden when no supported
   GPU is detected; defaults to the discrete GPU on hybrid systems)
-- `VRAM` - compact video-memory % readout (same auto-hide behaviour)
+- `VRAM` - live mini history graph + current % (same auto-hide behaviour)
 - `NET` - live download/upload throughput (down / up), colour-coded
 
 **In the dropdown panel** (click the widget)
@@ -19,10 +19,11 @@ history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 - `Network` - combined download/upload **mirror bar chart** (download bars rise,
   upload bars mirror downward)
 - `Disk` - used / total
-- `GPU` - history graph and utilisation % (with the GPU model as detail). Only
-  shown when a supported GPU is detected.
-- `VRAM` - video memory history graph, % used, and used / total. Only shown
-  when a supported GPU is detected.
+- `GPU` - history graph, utilisation %, and load-level label (like `CPU`); the
+  GPU model is shown as the secondary detail. Only shown when a supported GPU
+  is detected.
+- `VRAM` - video memory history graph, % used, and used / total (like
+  `Memory`). Only shown when a supported GPU is detected.
 
 The widget follows the bar foreground, so it darkens correctly on a transparent
 bar, and it uses the theme accent/urgent colours on the network graph.

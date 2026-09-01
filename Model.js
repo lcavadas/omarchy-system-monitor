@@ -114,6 +114,11 @@ function cpuLabel(percent) {
   return "Idle"
 }
 
+// GPU utilisation uses the same load-level scale as CPU.
+function gpuLabel(percent) {
+  return cpuLabel(percent)
+}
+
 function formatRate(bps) {
   var n = Number(bps)
   if (!isFinite(n) || n < 0) n = 0
@@ -136,6 +141,7 @@ if (typeof module !== "undefined") {
     parseKeyValue: parseKeyValue,
     parsePercent: parsePercent,
     cpuLabel: cpuLabel,
+    gpuLabel: gpuLabel,
     formatRate: formatRate,
     formatRateShort: formatRateShort
   }

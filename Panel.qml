@@ -243,7 +243,6 @@ Panel {
         samples: root.gpuMemHistory
         accent: root.barVramColor
         maxPoints: 24
-        showGraph: false
         visible: root.showVram && root.gpuAvailable
       }
       BarMetric {
@@ -334,8 +333,8 @@ Panel {
             samples: root.gpuHistory
             accent: root.gpuBarColor
             showGraph: true
-            detail: root.gpuName || "GPU"
-            subDetail: ""
+            detail: Model.gpuLabel(root.gpuPercent).toUpperCase()
+            subDetail: root.gpuName
           }
           PanelSeparator { foreground: root.fg }
           MetricCard {
