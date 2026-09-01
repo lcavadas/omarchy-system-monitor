@@ -321,6 +321,34 @@ Panel {
           subDetail: ""
         }
 
+        // GPU card + its separator are wrapped so both hide together on
+        // machines with no supported GPU (no dangling divider in the popup).
+        Column {
+          visible: root.gpuAvailable
+          width: parent.width
+          spacing: Style.space(14)
+          PanelSeparator { foreground: root.fg }
+          MetricCard {
+            title: "GPU"
+            percent: root.gpuPercent
+            samples: root.gpuHistory
+            accent: root.gpuBarColor
+            showGraph: true
+            detail: root.gpuName || "GPU"
+            subDetail: ""
+          }
+          PanelSeparator { foreground: root.fg }
+          MetricCard {
+            title: "VRAM"
+            percent: root.gpuMemPercent
+            samples: root.gpuMemHistory
+            accent: root.vramBarColor
+            showGraph: true
+            detail: root.gpuMemLabel
+            subDetail: ""
+          }
+        }
+
         PanelSeparator { foreground: root.fg }
 
         MetricCard {
@@ -352,34 +380,6 @@ Panel {
           showGraph: false
           detail: root.hasData ? root.diskLabel : "—"
           subDetail: ""
-        }
-
-        // GPU card + its separator are wrapped so both hide together on
-        // machines with no supported GPU (no dangling divider in the popup).
-        Column {
-          visible: root.gpuAvailable
-          width: parent.width
-          spacing: Style.space(14)
-          PanelSeparator { foreground: root.fg }
-          MetricCard {
-            title: "GPU"
-            percent: root.gpuPercent
-            samples: root.gpuHistory
-            accent: root.gpuBarColor
-            showGraph: true
-            detail: root.gpuName || "GPU"
-            subDetail: ""
-          }
-          PanelSeparator { foreground: root.fg }
-          MetricCard {
-            title: "VRAM"
-            percent: root.gpuMemPercent
-            samples: root.gpuMemHistory
-            accent: root.vramBarColor
-            showGraph: true
-            detail: root.gpuMemLabel
-            subDetail: ""
-          }
         }
 
         PanelSeparator { foreground: root.fg }
