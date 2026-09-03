@@ -203,7 +203,7 @@ Panel {
 
   // ---- Bar button: tiny labels + live mini-graphs + values for CPU / memory
   //      / network / disk. Network's graph auto-scales to its recent peak;
-  //      disk has no graph. Custom MouseArea (no hover tooltip).
+  //      disk uses a value-only readout. Custom MouseArea (no hover tooltip).
   Item {
     id: button
     anchors.fill: parent
@@ -391,7 +391,8 @@ Panel {
           percent: root.diskPercent
           samples: root.diskHistory
           accent: root.fg
-          showGraph: false
+          showGraph: true
+          chartType: "progress"
           detail: root.hasData ? root.diskLabel : "—"
           subDetail: ""
         }
@@ -585,7 +586,7 @@ Panel {
       }
     }
 
-    // Live history graph; hidden for metrics that don't need one (disk).
+    // Live history graph for percentage-based metrics.
     SparkGraph {
       width: parent.width
       height: Style.space(44)
@@ -596,6 +597,16 @@ Panel {
       maxPoints: 60
       visible: card.showGraph && card.chartType === "area"
       autoScale: card.autoScale
+    }
+
+    // Current-value bar for storage: capacity changes slowly, so a clear
+    // used-space indicator is more useful than a nearly-flat history graph.
+    DiskUsageBar {
+      width: parent.width
+      height: Style.space(44)
+      percent: card.percent
+      accent: card.accent
+      visible: card.showGraph && card.chartType === "progress"
     }
 
     NetworkBarChart {
@@ -634,6 +645,32 @@ Panel {
         font.family: root.fontFam
         font.pixelSize: Style.font.bodySmall
         visible: card.subDetail !== ""
+      }
+    }
+  }
+
+  // ---- Rounded horizontal used-space indicator for the disk card. ----
+  component DiskUsageBar: Item {
+    id: diskBar
+    required property real percent
+    property color accent: root.fg
+
+    implicitHeight: Style.space(44)
+
+    Rectangle {
+      id: track
+      anchors.verticalCenter: parent.verticalCenter
+      width: parent.width
+      height: Style.space(24)
+      radius: height / 2
+      color: Qt.rgba(diskBar.accent.r, diskBar.accent.g, diskBar.accent.b, 0.16)
+      clip: true
+
+      Rectangle {
+        width: Math.max(0, Math.min(100, diskBar.percent)) / 100 * parent.width
+        height: parent.height
+        radius: parent.radius
+        color: diskBar.accent
       }
     }
   }
