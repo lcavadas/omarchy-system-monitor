@@ -31,7 +31,13 @@ bar, and it uses the theme accent/urgent colours on the network graph.
 ## Install
 
 ```bash
-omarchy plugin add https://git.mooglest.com/mooglest/omarchy-system-monitor.git
+omarchy plugin add https://github.com/lcavadas/omarchy-system-monitor.git
+```
+
+## Remove
+
+```bash
+omarchy plugin remove lcavadas.system-monitor
 ```
 
 ## Add to the bar
