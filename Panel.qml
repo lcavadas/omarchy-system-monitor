@@ -649,7 +649,7 @@ Panel {
     }
   }
 
-  // ---- Square horizontal used-space indicator for the disk card. ----
+  // ---- Theme-aware horizontal used-space indicator for the disk card. ----
   component DiskUsageBar: Item {
     id: diskBar
     required property real percent
@@ -662,12 +662,14 @@ Panel {
       anchors.verticalCenter: parent.verticalCenter
       width: parent.width
       height: Style.space(24)
+      radius: Style.cornerRadius > 0 ? height / 2 : 0
       color: Qt.rgba(diskBar.accent.r, diskBar.accent.g, diskBar.accent.b, 0.16)
       clip: true
 
       Rectangle {
         width: Math.max(0, Math.min(100, diskBar.percent)) / 100 * parent.width
         height: parent.height
+        radius: parent.radius
         color: diskBar.accent
       }
     }
