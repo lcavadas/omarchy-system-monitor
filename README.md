@@ -3,6 +3,8 @@
 A live system-monitor bar widget for Omarchy, inspired by iStat Menus: live
 history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 
+![System Monitor widget preview](preview.png)
+
 ## What it shows
 
 **On the bar** (compact, iStat-style, in order)
