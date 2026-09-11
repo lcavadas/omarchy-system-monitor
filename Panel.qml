@@ -107,8 +107,8 @@ Panel {
   onSettingsChanged: loadBarVisibility()
 
   function updateStats(raw) {
+    if (!Model.isValidStats(raw)) return
     var next = Model.parseKeyValue(raw)
-    if (Object.keys(next).length === 0) return
     cpuPercent = Model.parsePercent(next.cpu)
     memPercent = Model.parsePercent(next.memPercent)
     diskPercent = Model.parsePercent(next.diskPercent)
@@ -182,7 +182,9 @@ Panel {
 
   Process {
     id: statsProc
-    command: ["bash", "-c", Model.statsScript]
+    // `timeout --foreground --kill-after` bounds the entire shell process
+    // group, including a stalled driver command, without retaining children.
+    command: ["/usr/bin/timeout", "--foreground", "--kill-after=0.25s", "1.2s", "/usr/bin/env", "-i", "PATH=/usr/bin:/bin", "LANG=C", "LC_ALL=C", "/bin/bash", "-c", Model.statsScript]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.updateStats(text)

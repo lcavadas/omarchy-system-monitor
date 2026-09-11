@@ -1,93 +1,59 @@
 // System Monitor plugin data helpers.
-// The stats command is a single bash pipeline that emits tab-separated
-// key/value lines: cpu, memory, disk, networkDown, networkUp, load.
-//
-// CPU is computed from two /proc/stat snapshots 200ms apart instead of
-// shelling out to `top`, which scans the whole process table (~200ms of CPU
-// work per poll). A /proc/stat delta is a couple of small file reads, so the
-// poll costs well under a millisecond of actual CPU.
-//
-// Network is also a /proc/net/dev delta over the same 200ms window: rx bytes
-// (download) and tx bytes (upload) across non-loopback interfaces, scaled to
-// bytes/second.
+// The stats command emits a small, tab-separated, finite schema. It is run with
+// a cleared environment and only invokes explicitly named system binaries.
 
 var statsScript = [
-  "snap() { awk '/^cpu / { for (i=2;i<=NF;i++) t += $i; idle = $5 + $6; printf \"%d %d\\n\", t, idle }' /proc/stat; }",
-  "netsnap() { awk 'NR>2 && $1!=\"lo:\" && $1 ~ /:$/ {r+=$2; t+=$10} END {printf \"%d %d\", r, t}' /proc/net/dev; }",
-  "a=$(snap)",
-  "na=$(netsnap)",
-  "sleep 0.2",
-  "b=$(snap)",
-  "nb=$(netsnap)",
-  "ta=${a%% *}; ia=${a##* }",
-  "tb=${b%% *}; ib=${b##* }",
+  "set -u",
+  "AWK=/usr/bin/awk; SLEEP=/usr/bin/sleep; DF=/usr/bin/df; HEAD=/usr/bin/head",
+  "NVIDIA_SMI=/usr/bin/nvidia-smi; [ -x \"$NVIDIA_SMI\" ] || NVIDIA_SMI=/bin/false",
+  "snap() { \"$AWK\" '/^cpu / { for (i=2;i<=NF;i++) t += $i; idle = $5 + $6; printf \"%d %d\\n\", t, idle }' /proc/stat; }",
+  "netsnap() { \"$AWK\" 'NR>2 && $1!=\"lo:\" && $1 ~ /:$/ {r+=$2; t+=$10} END {printf \"%d %d\", r, t}' /proc/net/dev; }",
+  "a=$(snap); na=$(netsnap); \"$SLEEP\" 0.2; b=$(snap); nb=$(netsnap)",
+  "ta=${a%% *}; ia=${a##* }; tb=${b%% *}; ib=${b##* }",
   "dtotal=$((tb - ta)); didle=$((ib - ia))",
   "if [ \"$dtotal\" -gt 0 ]; then cpu=$(((dtotal - didle) * 100 / dtotal)); else cpu=0; fi",
-  "mem=$(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END { u=t-a; printf \"%.1fGB / %.0fGB\", u/1024/1024, t/1024/1024 }' /proc/meminfo)",
-  "memPct=$(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END { if (t>0) printf \"%d\", (t-a)*100/t; else printf \"0\" }' /proc/meminfo)",
-  "disk=$(df -h / | awk 'NR==2 { printf \"%s / %s\", $3, $2 }')",
-  "diskPct=$(df -P / | awk 'NR==2 { gsub(/%/,\"\",$5); print ($5==\"\" ? \"0\" : $5) }')",
-  "load=$(awk '{print $1}' /proc/loadavg)",
-  "na_rx=${na%% *}; na_tx=${na##* }",
-  "nb_rx=${nb%% *}; nb_tx=${nb##* }",
+  "mem=$(\"$AWK\" '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END { u=t-a; printf \"%.1fGB / %.0fGB\", u/1024/1024, t/1024/1024 }' /proc/meminfo)",
+  "memPct=$(\"$AWK\" '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END { if (t>0) printf \"%d\", (t-a)*100/t; else printf \"0\" }' /proc/meminfo)",
+  "disk=$(\"$DF\" -h / | \"$AWK\" 'NR==2 { printf \"%.60s / %.60s\", $3, $2 }')",
+  "diskPct=$(\"$DF\" -P / | \"$AWK\" 'NR==2 { gsub(/%/,\"\",$5); print ($5==\"\" ? \"0\" : $5) }')",
+  "load=$(\"$AWK\" '{print $1}' /proc/loadavg)",
+  "na_rx=${na%% *}; na_tx=${na##* }; nb_rx=${nb%% *}; nb_tx=${nb##* }",
   "downDelta=$((nb_rx - na_rx)); upDelta=$((nb_tx - na_tx))",
-  "if [ \"$downDelta\" -lt 0 ]; then downDelta=0; fi",
-  "if [ \"$upDelta\" -lt 0 ]; then upDelta=0; fi",
-  "netDown=$((downDelta * 5))",
-  "netUp=$((upDelta * 5))",
-  "netRate=$((netDown + netUp))",
-  "# ---- GPU: prefer nvidia-smi (discrete NVIDIA) if available, else fall back",
-  "# to the AMD amdgpu sysfs interface. Emits gpuAvailable so the panel can",
-  "# auto-hide the GPU metric on machines with no supported GPU. ----",
+  "if [ \"$downDelta\" -lt 0 ]; then downDelta=0; fi; if [ \"$upDelta\" -lt 0 ]; then upDelta=0; fi",
+  "netDown=$((downDelta * 5)); netUp=$((upDelta * 5)); netRate=$((netDown + netUp))",
   "gpuAvailable=0; gpuPercent=0; gpuName=\"\"; gpuMemLabel=\"\"; gpuMemPercent=0",
-  "if command -v nvidia-smi >/dev/null 2>&1; then",
-  "  gpuLine=\"$(nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | head -n1)\"",
-  "  if [ -n \"$gpuLine\" ]; then",
-  "    gpuName=\"$(printf '%s' \"$gpuLine\" | cut -d, -f1 | sed 's/^ *//;s/ *$//')\"",
-  "    gpuPercent=\"$(printf '%s' \"$gpuLine\" | cut -d, -f2 | tr -d ' ')\"",
-  "    gpuMemUsed=\"$(printf '%s' \"$gpuLine\" | cut -d, -f3 | tr -d ' ')\"",
-  "    gpuMemTotal=\"$(printf '%s' \"$gpuLine\" | cut -d, -f4 | tr -d ' ')\"",
-  "    if [ -n \"$gpuMemUsed\" ] && [ -n \"$gpuMemTotal\" ] && [ \"$gpuMemTotal\" -gt 0 ]; then",
-  "      gpuMemLabel=\"$(awk -v u=\"$gpuMemUsed\" -v t=\"$gpuMemTotal\" 'BEGIN { printf \"%.1f GiB / %.1f GiB\", u/1024, t/1024 }')\"",
-  "      gpuMemPercent=$(( gpuMemUsed * 100 / gpuMemTotal ))",
-  "    fi",
-  "    gpuAvailable=1",
+  "if [ -x \"$NVIDIA_SMI\" ]; then",
+  "  gpuLine=$(\"$NVIDIA_SMI\" --query-gpu=name,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null | \"$HEAD\" -c 512)",
+  "  IFS=, read -r gpuName gpuPercent gpuMemUsed gpuMemTotal _ <<EOF",
+  "${gpuLine}",
+  "EOF",
+  "  gpuName=$(printf '%s' \"$gpuName\" | \"$AWK\" '{$1=$1; print}')",
+  "  gpuPercent=$(printf '%s' \"$gpuPercent\" | \"$AWK\" '{$1=$1; print}')",
+  "  gpuMemUsed=$(printf '%s' \"$gpuMemUsed\" | \"$AWK\" '{$1=$1; print}')",
+  "  gpuMemTotal=$(printf '%s' \"$gpuMemTotal\" | \"$AWK\" '{$1=$1; print}')",
+  "  if [[ \"$gpuName\" =~ ^[[:print:]]{1,128}$ && \"$gpuPercent\" =~ ^[0-9]+$ && \"$gpuMemUsed\" =~ ^[0-9]+$ && \"$gpuMemTotal\" =~ ^[1-9][0-9]*$ ]]; then",
+  "    gpuMemLabel=$(\"$AWK\" -v u=\"$gpuMemUsed\" -v t=\"$gpuMemTotal\" 'BEGIN { printf \"%.1f GiB / %.1f GiB\", u/1024, t/1024 }')",
+  "    gpuMemPercent=$(( gpuMemUsed * 100 / gpuMemTotal )); gpuAvailable=1",
   "  fi",
   "fi",
-  "if [ \"$gpuAvailable\" -eq 0 ] && ls -d /sys/class/drm/card*/device 2>/dev/null | grep -q .; then",
-  "  best=\"\"; bestMem=0; _d=",
+  "if [ \"$gpuAvailable\" -eq 0 ]; then",
+  "  best=\"\"; bestMem=0",
   "  for _d in /sys/class/drm/card*/device; do",
-  "    [ -f \"$_d/gpu_busy_percent\" ] || continue",
-  "    mt=$(cat \"$_d/mem_info_vram_total\" 2>/dev/null || echo 0)",
-  "    if [ \"$mt\" -gt \"$bestMem\" ]; then bestMem=$mt; best=\"$_d\"; fi",
+  "    [ -f \"$_d/gpu_busy_percent\" ] || continue; mt=0; read -r mt < \"$_d/mem_info_vram_total\" || mt=0",
+  "    [[ \"$mt\" =~ ^[0-9]+$ ]] || continue; if [ \"$mt\" -gt \"$bestMem\" ]; then bestMem=$mt; best=\"$_d\"; fi",
   "  done",
   "  if [ -n \"$best\" ]; then",
-  "    gpuPercent=\"$(cat \"$best/gpu_busy_percent\" 2>/dev/null)\"",
-  "    gpuName=\"AMD GPU\"",
-  "    gpuMemUsed=\"$(cat \"$best/mem_info_vram_used\" 2>/dev/null)\"",
-  "    gpuMemTotal=\"$(cat \"$best/mem_info_vram_total\" 2>/dev/null)\"",
-  "    if [ -n \"$gpuMemUsed\" ] && [ -n \"$gpuMemTotal\" ] && [ \"$gpuMemTotal\" -gt 0 ]; then",
-  "      gpuMemLabel=\"$(awk -v u=\"$gpuMemUsed\" -v t=\"$gpuMemTotal\" 'BEGIN { printf \"%.1f GiB / %.1f GiB\", u/1073741824, t/1073741824 }')\"",
-  "      gpuMemPercent=$(( gpuMemUsed * 100 / gpuMemTotal ))",
+  "    gpuPercent=0; gpuMemUsed=0; gpuMemTotal=0; read -r gpuPercent < \"$best/gpu_busy_percent\" || true; read -r gpuMemUsed < \"$best/mem_info_vram_used\" || true; read -r gpuMemTotal < \"$best/mem_info_vram_total\" || true",
+  "    if [[ \"$gpuPercent\" =~ ^[0-9]+$ && \"$gpuMemUsed\" =~ ^[0-9]+$ && \"$gpuMemTotal\" =~ ^[1-9][0-9]*$ ]]; then",
+  "      gpuName=\"AMD GPU\"; gpuMemLabel=$(\"$AWK\" -v u=\"$gpuMemUsed\" -v t=\"$gpuMemTotal\" 'BEGIN { printf \"%.1f GiB / %.1f GiB\", u/1073741824, t/1073741824 }'); gpuMemPercent=$(( gpuMemUsed * 100 / gpuMemTotal )); gpuAvailable=1",
   "    fi",
-  "    gpuAvailable=1",
   "  fi",
   "fi",
-  "printf \"gpuAvailable\\t%d\\n\" \"$gpuAvailable\"",
-  "printf \"gpuPercent\\t%d\\n\" \"$gpuPercent\"",
-  "printf \"gpuName\\t%s\\n\" \"$gpuName\"",
-  "printf \"gpuMemLabel\\t%s\\n\" \"$gpuMemLabel\"",
-  "printf \"gpuMemPercent\\t%d\\n\" \"$gpuMemPercent\"",
-  "printf \"cpu\\t%d%%\\n\" \"$cpu\"",
-  "printf \"memory\\t%s\\n\" \"$mem\"",
-  "printf \"disk\\t%s\\n\" \"$disk\"",
-  "printf \"load\\t%s\\n\" \"$load\"",
-  "printf \"memPercent\\t%s\\n\" \"$memPct\"",
-  "printf \"diskPercent\\t%s\\n\" \"$diskPct\"",
-  "printf \"networkDown\\t%d\\n\" \"$netDown\"",
-  "printf \"networkUp\\t%d\\n\" \"$netUp\"",
-  "printf \"networkRate\\t%d\\n\" \"$netRate\""
+  "printf \"gpuAvailable\\t%d\\n\" \"$gpuAvailable\"; printf \"gpuPercent\\t%d\\n\" \"$gpuPercent\"; printf \"gpuName\\t%s\\n\" \"$gpuName\"; printf \"gpuMemLabel\\t%s\\n\" \"$gpuMemLabel\"; printf \"gpuMemPercent\\t%d\\n\" \"$gpuMemPercent\"",
+  "printf \"cpu\\t%d%%\\n\" \"$cpu\"; printf \"memory\\t%s\\n\" \"$mem\"; printf \"disk\\t%s\\n\" \"$disk\"; printf \"load\\t%s\\n\" \"$load\"; printf \"memPercent\\t%s\\n\" \"$memPct\"; printf \"diskPercent\\t%s\\n\" \"$diskPct\"; printf \"networkDown\\t%d\\n\" \"$netDown\"; printf \"networkUp\\t%d\\n\" \"$netUp\"; printf \"networkRate\\t%d\\n\" \"$netRate\""
 ].join("\n")
+
+var statsKeys = ["gpuAvailable", "gpuPercent", "gpuName", "gpuMemLabel", "gpuMemPercent", "cpu", "memory", "disk", "load", "memPercent", "diskPercent", "networkDown", "networkUp", "networkRate"]
 
 function parseKeyValue(raw) {
   var next = {}
@@ -98,6 +64,39 @@ function parseKeyValue(raw) {
     next[lines[i].substring(0, idx)] = lines[i].substring(idx + 1).trim()
   }
   return next
+}
+
+function isUnsigned(value, max) {
+  return /^\d{1,15}$/.test(value) && Number(value) <= max
+}
+
+function isPercent(value) {
+  return isUnsigned(value, 100)
+}
+
+function isValidStats(raw) {
+  raw = String(raw || "")
+  if (raw.length === 0 || raw.length > 4096) return false
+  var lines = raw.split("\n")
+  var seen = {}
+  for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    if (lines[lineIndex] === "" && lineIndex === lines.length - 1) continue
+    var tabIndex = lines[lineIndex].indexOf("\t")
+    if (tabIndex <= 0) return false
+    var key = lines[lineIndex].substring(0, tabIndex)
+    if (seen[key]) return false
+    seen[key] = true
+  }
+  var next = parseKeyValue(raw)
+  if (Object.keys(next).length !== statsKeys.length) return false
+  for (var i = 0; i < statsKeys.length; i++) if (!Object.prototype.hasOwnProperty.call(next, statsKeys[i])) return false
+  return /^(0|1)$/.test(next.gpuAvailable)
+    && isPercent(next.gpuPercent) && isPercent(next.gpuMemPercent) && isPercent(next.memPercent)
+    && isPercent(next.diskPercent) && /^\d{1,3}%$/.test(next.cpu)
+    && isUnsigned(next.networkDown, 999999999999999) && isUnsigned(next.networkUp, 999999999999999)
+    && isUnsigned(next.networkRate, 999999999999999) && /^\d+(\.\d+)?$/.test(next.load)
+    && /^[\d.]+GB \/ [\d.]+GB$/.test(next.memory) && next.disk.length <= 128
+    && /^[\x20-\x7e]{0,128}$/.test(next.gpuName) && /^[\x20-\x7e]{0,64}$/.test(next.gpuMemLabel)
 }
 
 function parsePercent(value) {
@@ -114,10 +113,7 @@ function cpuLabel(percent) {
   return "Idle"
 }
 
-// GPU utilisation uses the same load-level scale as CPU.
-function gpuLabel(percent) {
-  return cpuLabel(percent)
-}
+function gpuLabel(percent) { return cpuLabel(percent) }
 
 function formatRate(bps) {
   var n = Number(bps)
@@ -136,13 +132,5 @@ function formatRateShort(bps) {
 }
 
 if (typeof module !== "undefined") {
-  module.exports = {
-    statsScript: statsScript,
-    parseKeyValue: parseKeyValue,
-    parsePercent: parsePercent,
-    cpuLabel: cpuLabel,
-    gpuLabel: gpuLabel,
-    formatRate: formatRate,
-    formatRateShort: formatRateShort
-  }
+  module.exports = { statsScript: statsScript, parseKeyValue: parseKeyValue, isValidStats: isValidStats, parsePercent: parsePercent, cpuLabel: cpuLabel, gpuLabel: gpuLabel, formatRate: formatRate, formatRateShort: formatRateShort }
 }
