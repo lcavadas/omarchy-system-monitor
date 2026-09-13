@@ -182,9 +182,9 @@ Panel {
 
   Process {
     id: statsProc
-    // `timeout --foreground --kill-after` bounds the entire shell process
-    // group, including a stalled driver command, without retaining children.
-    command: ["/usr/bin/timeout", "--foreground", "--kill-after=0.25s", "1.2s", "/usr/bin/env", "-i", "PATH=/usr/bin:/bin", "LANG=C", "LC_ALL=C", "/bin/bash", "-c", Model.statsScript]
+    // `timeout --kill-after` runs the command in its own process group and
+    // bounds the shell plus any descendants without retaining children.
+    command: ["/usr/bin/timeout", "--kill-after=0.25s", "1.2s", "/usr/bin/env", "-i", "PATH=/usr/bin:/bin", "LANG=C", "LC_ALL=C", "/bin/bash", "-c", Model.statsScript]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.updateStats(text)

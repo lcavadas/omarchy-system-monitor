@@ -1,5 +1,10 @@
 const assert = require("assert")
+const fs = require("fs")
 const Model = require("./Model.js")
+
+const panel = fs.readFileSync("./Panel.qml", "utf8")
+assert.strictEqual(panel.includes('"--foreground"'), false)
+assert.strictEqual(panel.includes('"--kill-after=0.25s"'), true)
 
 const valid = [
   "gpuAvailable\t1",
