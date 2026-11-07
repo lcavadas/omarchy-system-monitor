@@ -11,7 +11,7 @@ history mini-graphs on the bar and richer detail graphs in the dropdown panel.
 - `CPU` - live mini history graph + current %
 - `RAM` - live mini history graph + current %
 - `GPU` - live mini history graph + current % (auto-hidden when no supported
-  GPU is detected; defaults to the discrete GPU on hybrid systems)
+  GPU is detected; follows the busier GPU on hybrid systems)
 - `VRAM` - live mini history graph + current % (same auto-hide behaviour)
 - `NET` - live download/upload throughput (down / up), colour-coded
 
@@ -65,8 +65,10 @@ GPU monitoring is best-effort and auto-hidden when unsupported:
 - **NVIDIA** via `nvidia-smi` (ships with the driver; no extra install).
 - **AMD** via the `amdgpu` sysfs interface (`gpu_busy_percent`,
   `mem_info_vram_*`).
-- On hybrid systems the discrete GPU is reported by default. Systems with no
-  supported GPU simply don't show a GPU metric in the bar or popup.
+- On hybrid NVIDIA + AMD systems both are read each poll and the busier one is
+  reported, staying on the AMD GPU when they tie. `VRAM` and the GPU name in the
+  popup follow the same GPU. Systems with no supported GPU simply don't show a
+  GPU metric in the bar or popup.
 
 ## Bar visibility toggles
 
